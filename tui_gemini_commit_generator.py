@@ -49,10 +49,10 @@ show_help = False
 # --- Widgets ---
 lang_selector = RadioList([("es", "Español"), ("en", "English")])
 model_selector = RadioList([("pro", "pro"), ("flash", "flash")])
-temp_field = TextArea(text="0.2", height=1)
-context_area = TextArea(text="", height=5)
-prompt_area = TextArea(text=DEFAULT_PROMPT, height=15, scrollbar=True, multiline=True)
-output_area = TextArea(text="", height=20, scrollbar=True, wrap_lines=True)
+temp_field = TextArea(text="0.2", height=1, focus_on_click=True)
+context_area = TextArea(text="", height=5, focus_on_click=True)
+prompt_area = TextArea(text=DEFAULT_PROMPT, height=15, scrollbar=True, multiline=True, focus_on_click=True)
+output_area = TextArea(text="", height=20, scrollbar=True, wrap_lines=True, focus_on_click=True)
 status_label = Label(text="F1 -> Help")
 
 # --- Contenido de ayuda ---
@@ -409,6 +409,24 @@ def _(event):
 @kb.add("c-a")
 def _(event):
     select_all_text()
+
+
+@kb.add("backspace")
+def _(event):
+    if show_help:
+        return
+    buffer = event.app.current_buffer
+    if buffer.selection_state:
+        # Delete selected text
+        start = buffer.selection_state.original_cursor_position
+        end = buffer.cursor_position
+        if start > end:
+            start, end = end, start
+        buffer.text = buffer.text[:start] + buffer.text[end:]
+        buffer.cursor_position = start
+        buffer.selection_state = None
+    else:
+        buffer.delete_before_cursor()
 
 
 # --- App ---
