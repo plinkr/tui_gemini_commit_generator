@@ -21,8 +21,8 @@ from prompt_toolkit.widgets import (
 
 API_KEY = os.environ.get("GEMINI_API_KEY", "")
 MODEL_URLS = {
-    "flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-    "pro": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
+    "flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+    "pro": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent",
 }
 
 DEFAULT_PROMPT = """Eres un modelo de inteligencia artificial altamente capacitado en las mejores prácticas de desarrollo de software, específicamente para generar mensajes de commit siguiendo la especificación de Conventional Commits.
