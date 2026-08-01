@@ -21,8 +21,8 @@ from prompt_toolkit.widgets import (
 
 API_KEY = os.environ.get("GEMINI_API_KEY", "")
 MODEL_URLS = {
-    "flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
-    "pro": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent",
+    "flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+    "pro": "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent",
 }
 
 DEFAULT_PROMPT = """Eres un modelo de inteligencia artificial altamente capacitado en las mejores prácticas de desarrollo de software, específicamente para generar mensajes de commit siguiendo la especificación de Conventional Commits.
@@ -106,9 +106,9 @@ def build_prompt(lang, context):
     if context.strip():
         text += f"\n\nUse the following context to understand intent:\n{context}"
     if lang == "es":
-        text += "\n\nAhora, genera el mensaje de commit correcto basado en esta información. En español, ten en cuenta una buena ortografía y usa acentos donde sea necesario.\nAquí está el Git diff:\n"
+        text += "\n\nAhora, genera el mensaje de commit correcto basado en esta información, en idioma español. *IMPORTANTE*: ten en cuenta la correcta ortografía del castellano y usa acentos en las palabras que lleven acento en castellano.\nAquí está el Git diff:\n"
     else:
-        text += "\n\nNow, generate the correct commit message based on this information. In English language.\nHere is the Git diff:\n"
+        text += "\n\nNow, generate the correct commit message based on this information, in English language.\nHere is the Git diff:\n"
     text += get_git_diff()
     return text
 
