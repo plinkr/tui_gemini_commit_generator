@@ -21,7 +21,7 @@ from prompt_toolkit.widgets import (
 
 API_KEY = os.environ.get("GEMINI_API_KEY", "")
 MODEL_URLS = {
-    "flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+    "flash": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent",
     "pro": "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent",
 }
 
@@ -43,16 +43,25 @@ DEFAULT_PROMPT = """Eres un modelo de inteligencia artificial altamente capacita
             - Opcionalmente, incluye un cuerpo detallado del commit que explique el propósito de los cambios, la justificación y cualquier contexto relevante. Nunca uses comillas simples '' ni comillas dobles "" en el cuerpo detallado, en su caso usa backticks `` solamente.
 """
 
+def get_model_version(url):
+    # Extrae la versión del modelo de la URL
+    model_name = url.split('/')[-1].split(':')[0]
+    return model_name.replace('gemini-', '')
+
+
 # --- Estado de la ayuda ---
 show_help = False
 
 # --- Widgets ---
 lang_selector = RadioList([("es", "Español"), ("en", "English")])
-model_selector = RadioList([("pro", "pro"), ("flash", "flash")])
+model_selector = RadioList([
+    ("pro", f"pro ({get_model_version(MODEL_URLS['pro'])})"),
+    ("flash", f"flash ({get_model_version(MODEL_URLS['flash'])})")
+])
 temp_field = TextArea(text="0.2", height=1, focus_on_click=True)
 context_area = TextArea(text="", height=5, focus_on_click=True)
-prompt_area = TextArea(text=DEFAULT_PROMPT, height=15, scrollbar=True, multiline=True, focus_on_click=True)
-output_area = TextArea(text="", height=20, scrollbar=True, wrap_lines=True, focus_on_click=True)
+prompt_area = TextArea(text=DEFAULT_PROMPT, height=16, scrollbar=True, multiline=True, focus_on_click=True)
+output_area = TextArea(text="", height=22, scrollbar=True, wrap_lines=True, focus_on_click=True)
 status_label = Label(text="F1 -> Help")
 
 # --- Contenido de ayuda ---
@@ -104,7 +113,7 @@ def get_git_diff():
 def build_prompt(lang, context):
     text = prompt_area.text
     if context.strip():
-        text += f"\n\nUse the following context to understand intent:\n{context}"
+        text += f"\n\nIMPORTANT: Use the following context to understand intent:\n{context}"
     if lang == "es":
         text += "\n\nAhora, genera el mensaje de commit correcto basado en esta información, en idioma español. *IMPORTANTE*: ten en cuenta la correcta ortografía del castellano y usa acentos en las palabras que lleven acento en castellano.\nAquí está el Git diff:\n"
     else:
@@ -238,8 +247,17 @@ def toggle_help():
     app.invalidate()
 
 
+def clean_context():
+    if not show_help:
+        context_area.text = ""
+        app.layout.focus(context_area)
+        status_label.text = "Contexto limpiado"
+        app.invalidate()
+
+
 # --- Botones ---
 generate_btn = Button(text="Generar", handler=generate_commit)
+clean_btn = Button(text="Limpiar", handler=clean_context)
 copy_btn = Button(text="Copiar", handler=copy_output)
 quit_btn = Button(text="Salir", handler=quit_app)
 
@@ -268,20 +286,34 @@ help_dialog = Dialog(
 top_panel = VSplit([
     # Panel izquierdo, controles
     Box(
-        Frame(
-            HSplit([
-                Label(text="Lenguaje"),
-                lang_selector,
-                Label(text="Modelo"),
-                model_selector,
-                Label(text="Temperatura"),
-                temp_field,
-                Label(text="Contexto"),
-                context_area,
-                VSplit([generate_btn, copy_btn, quit_btn], padding=2, width=D(weight=1)),
-            ]),
-            title="Controles",
-        ),
+        HSplit([
+            # Panel de configuración del modelo
+            Frame(
+                HSplit([
+                    Label(text="Lenguaje"),
+                    lang_selector,
+                    Label(text="Modelo"),
+                    model_selector,
+                    Label(text="Temperatura"),
+                    temp_field,
+                ]),
+                title="Configuración del Modelo",
+                height=D(min=10),
+            ),
+            # Panel de contexto separado
+            Frame(
+                HSplit([
+                    context_area,
+                    VSplit([
+                        Window(width=D(weight=1)),
+                        generate_btn,
+                        clean_btn,
+                    ], padding=2, height=1),
+                ]),
+                title="Contexto",
+                height=D(weight=1, min=8),
+            ),
+        ]),
         padding=0,
         width=D(weight=45),  # 45%
     ),
@@ -300,19 +332,18 @@ top_panel = VSplit([
     padding=1,
 )
 
-# --- Panel intermedio (status) ---
-status_panel = Frame(
-    HSplit([
-        status_label,
-    ]),
-    title="Estado",
-    height=3
-)
-
-# --- Panel inferior (salida del modelo) ---
+# --- Panel inferior (salida del modelo + botones + estado) ---
 bottom_panel = Frame(
     HSplit([
         output_area,
+        VSplit([
+            Label(text=lambda: status_label.text, style="class:status"),
+            Window(width=D(weight=1)),
+            copy_btn,
+            Window(width=1),
+            quit_btn,
+            Window(width=1),
+        ], height=1),
     ]),
     title="Salida del modelo"
 )
@@ -320,7 +351,6 @@ bottom_panel = Frame(
 # --- Layout principal ---
 root_content = HSplit([
     top_panel,
-    status_panel,
     bottom_panel
 ], padding=0)
 
@@ -384,11 +414,7 @@ def _(event):
 
 @kb.add("c-l")
 def _(event):
-    if not show_help:
-        context_area.text = ""
-        app.layout.focus(context_area)
-        status_label.text = "Contexto limpiado"
-        app.invalidate()
+    clean_context()
 
 
 @kb.add("c-o")
